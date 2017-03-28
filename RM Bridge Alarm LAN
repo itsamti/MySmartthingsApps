@@ -1,0 +1,284 @@
+/**
+ *  Broadlink Switch
+ *
+ *  Copyright 2016 itsamti
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License. You may obtain a copy of the License at:
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
+ *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
+ *  for the specific language governing permissions and limitations under the License.
+ *
+ *  09/01/2016 Updated Device Name to Device ID - itsamti
+ *  09/09/2016 Added Delay function  sleepForDuration(500) to sleep 500ms and re-execute on/off one more time to ensure broadlink turn on/off in second try if first one doesnt work - itsamti
+ */
+ 
+ // 09/01/2016 - itsamti - Added new switch definition below 
+metadata 
+{
+	
+    definition (name: "RM Bridge Alarm LAN", namespace: "itsamti", author: "itsamti") 
+		{
+		capability "Alarm"
+		capability "Sensor"
+		capability "Actuator"
+		}
+
+	tiles {
+		standardTile("alarm", "device.alarm", width: 2, height: 2) {
+			state "off", label:'off', action:'alarm.both', icon:"st.alarm.alarm.alarm", backgroundColor:"#ffffff"
+			state "strobe", label:'strobe!', action:'alarm.off', icon:"st.alarm.alarm.alarm", backgroundColor:"#e86d13"
+			state "siren", label:'siren!', action:'alarm.off', icon:"st.alarm.alarm.alarm", backgroundColor:"#e86d13"
+			state "both", label:'alarm!', action:'alarm.off', icon:"st.alarm.alarm.alarm", backgroundColor:"#e86d13"
+		}
+		standardTile("strobe", "device.alarm", inactiveLabel: false, decoration: "flat") {
+			state "default", label:'', action:"alarm.strobe", icon:"st.secondary.strobe", backgroundColor:"#cccccc"
+		}
+		standardTile("siren", "device.alarm", inactiveLabel: false, decoration: "flat") {
+			state "default", label:'', action:"alarm.siren", icon:"st.secondary.siren", backgroundColor:"#cccccc"
+		}       
+		standardTile("off", "device.alarm", inactiveLabel: false, decoration: "flat") {
+			state "default", label:'', action:"alarm.off", icon:"st.secondary.off"
+		}
+		main "alarm"
+		details(["alarm","strobe","siren","test","off"])
+	}
+}
+
+def parse(String description) 
+	{
+		def pair = description.split(":")
+		createEvent(name: pair[0].trim(), value: pair[1].trim())
+	}
+
+def strobe() {
+	sendEvent(name: "alarm", value: "strobe")
+	put('on')
+}
+
+def siren() {
+	sendEvent(name: "alarm", value: "siren")
+	put('on')
+}
+
+def both() {
+	sendEvent(name: "alarm", value: "both")
+	put('on')
+}
+
+def off() {
+	sendEvent(name: "alarm", value: "off")
+	put('off')
+    oput('off')
+	pput('off')
+}
+
+private put(toggle) 
+	{
+		def url1="192.168.1.154:7474"
+		// def url1="xxx.xxx.x.x:xxxx"
+		def userpassascii= "admin:bridge"
+		//def userpassascii= "user:password"
+		def userpass = "Basic " + userpassascii.encodeAsBase64().toString()
+		
+		// Using Network ID instead of device name -- def toReplace = device.displayName  -- Updated by itsamti 09/01/2016
+		def toReplace = device.deviceNetworkId    
+		
+		// replacing all spaces with %20
+		def replaced = toReplace.replaceAll(' ', '%20') 
+		
+		// 09/01/2016 Added debug log
+//1/26/2017		log.debug "Running REST API Command http://${url1}/code/$replaced%20$toggle" 
+        
+ //1/26/2017       log.debug "DEVICE LABEL - ${device.label}" 
+		
+	if (toggle == 'on')
+	{ 
+    // Calling HTTP on/off			   
+		sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMPANIC",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )	 
+    }
+    else
+    {
+    	// Calling HTTP on/off			   
+		sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMHOME",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )
+         sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMUNLOCK",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )
+	
+				   
+				   
+    }
+        
+        
+   }
+   
+private oput(toggle) 
+	{
+		def url1="192.168.1.154:7474"
+		// def url1="xxx.xxx.x.x:xxxx"
+		def userpassascii= "admin:bridge"
+		//def userpassascii= "user:password"
+		def userpass = "Basic " + userpassascii.encodeAsBase64().toString()
+		
+		// Using Network ID instead of device name -- def toReplace = device.displayName  -- Updated by itsamti 09/01/2016
+		def toReplace = device.deviceNetworkId    
+		
+		// replacing all spaces with %20
+		def replaced = toReplace.replaceAll(' ', '%20') 
+		
+		// 09/01/2016 Added debug log
+//1/26/2017		log.debug "Running REST API Command http://${url1}/code/$replaced%20$toggle" 
+        
+ //1/26/2017       log.debug "DEVICE LABEL - ${device.label}" 
+		
+	if (toggle == 'on')
+	{ 
+    // Calling HTTP on/off			   
+		sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMPANIC",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )	 
+    }
+    else
+    {
+    	// Calling HTTP on/off			   
+		sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMHOME",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )
+         sleepForDuration(100)
+         sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMUNLOCK",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )
+	
+				   
+				   
+    }
+        
+        
+   }
+
+private pput(toggle) 
+	{
+		def url1="192.168.1.154:7474"
+		// def url1="xxx.xxx.x.x:xxxx"
+		def userpassascii= "admin:bridge"
+		//def userpassascii= "user:password"
+		def userpass = "Basic " + userpassascii.encodeAsBase64().toString()
+		
+		// Using Network ID instead of device name -- def toReplace = device.displayName  -- Updated by itsamti 09/01/2016
+		def toReplace = device.deviceNetworkId    
+		
+		// replacing all spaces with %20
+		def replaced = toReplace.replaceAll(' ', '%20') 
+		
+		// 09/01/2016 Added debug log
+//1/26/2017		log.debug "Running REST API Command http://${url1}/code/$replaced%20$toggle" 
+        
+ //1/26/2017       log.debug "DEVICE LABEL - ${device.label}" 
+		
+	if (toggle == 'on')
+	{ 
+    // Calling HTTP on/off			   
+		sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMPANIC",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )	 
+    }
+    else
+    {
+    	// Calling HTTP on/off			   
+		sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMHOME",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )
+         sleepForDuration(100)
+         sendHubCommand
+					( 
+						new physicalgraph.device.HubAction
+							(
+								method: "GET",
+								path: "/code/SAMUNLOCK",
+								headers: [HOST: "${url1}", AUTHORIZATION: "${userpass}"],
+							)
+				   )
+	
+				   
+				   
+    }
+        
+        
+   }   
+def sleepForDuration(duration, callback = {})
+	{
+		def dTotalSleep = 0
+		def dStart = new Date().getTime()
+		def cmds = []
+		cmds << "delay 100"
+		log.debug "Start sleeping"
+		log.debug "dStart = ${dStart}"
+		
+		//While loop to sleep until duration reached
+		while (dTotalSleep <= duration)
+			{            
+				cmds
+				dTotalSleep = (new Date().getTime() - dStart)
+			}
+
+		def dEnd = new Date().getTime()
+		log.debug "dEnd = ${dEnd}"
+		log.debug "End Sleeping; Slept for ${dTotalSleep}ms"
+		
+		callback(dTotalSleep)
+	}
