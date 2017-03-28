@@ -1,0 +1,167 @@
+/ *  App Name:   RM Volume
+ *
+ *  Author: 	itsamti
+ *  
+ *  Use this program with a virtual dimmer as the master for best results.
+ *
+ *  This app lets the user select from a list of dimmers to act as a triggering
+ *  master for other dimmers or regular switches. Regular switches come on
+ *  anytime the master dimmer is on or dimmer level is set to more than 0%.
+ *  of the master dimmer.
+ *
+ *
+ ******************************************************************************
+ */
+
+
+// Automatically generated. Make future change here.
+definition(
+    name: "RM Volume",
+    namespace: "itsamti",
+    author: "itsamti",
+    description: "Turns up down volume based on dimmer",
+    category: "My Apps",
+    iconUrl: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience.png",
+    iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Convenience/Cat-Convenience%402x.png"
+)
+
+preferences {
+	section("When this...") { 
+		input "masters", "capability.switchLevel", 
+			multiple: false, 
+			title: "Master Dimmer Switch...", 
+			required: true
+	}
+
+	section("Then these will follow with on/off...") {
+		input "slaves2", "capability.switch", 
+			multiple: true, 
+			title: "Slave On/Off Switch(es)...", 
+			required: false
+	}
+}
+
+def installed()
+{
+    subscribe(masters, "switch.on", switchOnHandler)
+	subscribe(masters, "switch.off", switchOffHandler)
+	subscribe(masters, "switch.setLevel", switchSetLevelHandler)
+	subscribe(masters, "switch", switchSetLevelHandler)
+}
+
+def updated()
+{
+	unsubscribe()
+	subscribe(masters, "switch.on", switchOnHandler)
+	subscribe(masters, "switch.off", switchOffHandler)
+	subscribe(masters, "switch.setLevel", switchSetLevelHandler)
+	subscribe(masters, "switch", switchSetLevelHandler)
+	log.info "subscribed to all of switches events"
+}
+
+def switchSetLevelHandler(evt)
+{	
+ if ((evt.value == "on") || (evt.value == "off" ))
+		return
+        
+  //  log.debug "SMART APP LEVEL switchSetLevelHandler Event: ${evt.value}"
+  //  log.debug "SMART APP LEVEL switchCounter Event: ${state.someKey}"
+	def val = state.someKey.toFloat()
+    log.debug "val: ${val}"
+
+    
+	//def level = evt.value.toFloat()
+	//def currval = level.toInteger()
+	def currval = evt.value.toFloat()
+    def dVol = 0
+    log.debug "currval: ${currval}"
+    
+     currval = currval.toInteger()
+     val = val.toInteger()
+   // val =5
+    def delay = 5
+     if (currval < val)
+     {log.info "ACTION OFF"
+     dVol = val - currval
+     		while (dVol > 0)
+            {
+            log.debug "dVol loop = ${dVol}" 
+          //  runIn(1, turnOffSwitch())
+         // pause(500)
+          turnOffSwitch()
+            dVol = dVol - 1
+            }
+     
+     }
+     
+     
+     if (currval > val)
+     {log.info "ACTION ON"
+     dVol = currval - val
+          	while (dVol > 2)
+            {
+            log.debug "dVol loop = ${dVol}" 
+          //  runIn(1, turnOnSwitch())
+           //pause(500)
+            turnOnSwitch()
+            dVol = dVol - 1
+            }
+     }
+     
+
+	
+    
+
+  //  log.info "DVOL Event: ${dVol}"
+
+	incrementCounter(evt)
+   //   log.info "switchSetLevelHandler Event: ${level}"
+
+   //   slaves?.setLevel(level)
+
+}
+
+def switchOffHandler(evt) {
+	log.info "switchoffHandler Event: ${evt.value}"
+     log.debug "SMART APP OFF switchSetLevelHandler Event: ${evt.value}"
+     
+      def dVol = 100
+     		while (dVol > 1)
+            {
+            log.debug "dVol loop = ${dVol}" 
+          //  runIn(delay, turnOffSwitch)
+          pause(100)
+          turnOffSwitch()
+            dVol = dVol - 1
+            }
+           state.someKey = 0 
+	//slaves2?.off()
+}
+
+def switchOnHandler(evt) {
+	log.info "switchOnHandler Event: ${evt.value}"
+     log.debug "SMART APP ON switchSetLevelHandler Event: ${evt.value}"
+
+	def dimmerValue = masters.latestValue("level") //can be turned on by setting the level
+
+	slaves2?.on()
+}
+
+
+def incrementCounter(evt) {
+  //  log.debug "EVT ${evt.value}"
+  	//def lvl = evt.value.toFloat()
+	//lvl = lvl.toInteger()
+    state.someKey = "${evt.value}"
+    log.debug "state.someKey: $state.someKey" // -> updated
+}
+
+
+def turnOnSwitch() {
+	slaves2?.on()
+}
+
+
+def turnOffSwitch() {
+	slaves2?.off()
+}
